@@ -18,6 +18,10 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 
+// UserRoute
+import userRoutes from './routes/user.routes';
+app.use('/api/user', userRoutes);
+
 
 app.listen(port, async () => {
   await mongoose
