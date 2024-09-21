@@ -15,31 +15,33 @@ declare global {
   }
 }
 
-const registerUser = async (req: Request, res: Response) => {
+exports.registerUser = async (req: Request, res: Response) => {
   try {
-    let user = (await userService.getUser({
-      email: req.body.email,
-      isDelete: false,
-    })) as IUser;
-    if (user) {
-      return res.json({ message: "User is already exists" });
-    }
-    if(req.file){
-        req.body.profileImage = req.file.path;
-    }
-    let hashPassword: string = await bcrypt.hash(req.body.password, 10);
-    const newUser = (await userService.addNewUser({
-      ...req.body,
-      password: hashPassword,
-    })) as IUser;
-    res.status(201).json({ newUser, message: "New User Registered" });
-  } catch (error) {
-    console.log(error);
-    res.json({ message: "Internal Server error." });
-  }
-};
+      let imagePath = ''
+      let user = (await userService.findOneUser({ email: req.body.email, isDelete: false })) as IUser;
+      if (user) {
+          return res.status(400).json({ message: "User Alrady Exists..." });
+      }
 
-const loginUser = async (req: Request, res: Response) => {
+      if (req.file) {
+          imagePath = req.file.path.replace(/\/g/, "/");
+      }
+
+      let hashPassword = await bcrypt.hash(req.body.password, 10);
+      console.log(hashPassword);
+
+       user = (await userService.addNewUser({ ...req.body, password: hashPassword, profileImage: imagePath })) as IUser;
+      res.status(201).json({ user, message: "User Registration Successfully" });
+
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal Server Error.." })
+  }
+}
+
+
+
+exports.loginUser = async (req: Request, res: Response) => {
   try {
     let user = (await userService.getUser({
       email: req.body.email,
@@ -66,9 +68,12 @@ const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-const getProfile = async (req: Request, res: Response) => {
+
+
+
+exports.getProfile = async (req: Request, res: Response) => {
   try {
-    let user = await userService.getUserById(req.user?._id as ObjectId) as IUser;
+    let user = await userService.getAllUser({isDelete:false}) as IUser;
     if (!user) {
       return res.json({ message: "user not found" });
     }
@@ -79,7 +84,29 @@ const getProfile = async (req: Request, res: Response) => {
   }
 };
 
-const changePassword = async (req: Request, res: Response) => {
+
+exports.updateProfile = async (req: Request, res: Response) => {
+  try {
+    let user = (await userService.getUserById(
+      req.user?._id as ObjectId
+    )) as IUser;
+    if (!user) {
+      return res.json({ message: "user not found" });
+    }
+    if(req.file){
+      req.body.profileImage = req.file.path;
+  }
+    let updateUser = await userService.updateUser(user._id as ObjectId, {
+      ...req.body
+    }) as IUser;
+    res.status(200).json({ user: updateUser, message: "Profile Update successfully" });
+  } catch (error) {
+    console.log(error);
+    res.json({ message: "Internal Server error." });
+  }
+};
+
+exports.changePassword = async (req: Request, res: Response) => {
   try {
     let user = (await userService.getUserById(
       req.user?._id as ObjectId
@@ -103,25 +130,16 @@ const changePassword = async (req: Request, res: Response) => {
   }
 };
 
-const updateProfile = async (req: Request, res: Response) => {
-    try {
-      let user = (await userService.getUserById(
-        req.user?._id as ObjectId
-      )) as IUser;
-      if (!user) {
-        return res.json({ message: "user not found" });
-      }
-      if(req.file){
-        req.body.profileImage = req.file.path;
-    }
-      let updateUser = await userService.updateUser(user._id as ObjectId, {
-        ...req.body
-      }) as IUser;
-      res.status(200).json({ user: updateUser, message: "Profile Update successfully" });
-    } catch (error) {
+exports.deleteUser = async(req: Request, res: Response) => {
+  try {
+      // let user = req.user;
+     let user = await userService.delete(
+          req.user?._id as ObjectId,
+          {isDelete:true}
+      )as IUser;
+      res.status(202).json({user,message:"User Delete Success "})
+  } catch (error) {
       console.log(error);
-      res.json({ message: "Internal Server error." });
-    }
-  };
-
-export { registerUser, loginUser, getProfile, changePassword, updateProfile };
+      res.status(500).json({message:"Internal Server Error"});
+  }
+}
