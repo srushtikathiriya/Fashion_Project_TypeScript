@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-export const verifyToken = async (
+exports.verifyToken = async (
   req: Request,
   res: Response,
   next: NextFunction

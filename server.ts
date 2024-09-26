@@ -22,6 +22,10 @@ app.get("/", (req: Request, res: Response) => {
 const userRoutes = require("./routes/user.routes");
 app.use("/api/user",userRoutes);
 
+// Product routes
+const productRoutes = require("./routes/product.routes");
+app.use("/api/product",productRoutes);
+
 
 app.listen(port, async () => {
   await mongoose
